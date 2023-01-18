@@ -121,6 +121,8 @@
     <None Include="img\Figure_1.eps" />
     <None Include="shaders\shader_5_1_tex.frag" />
     <None Include="shaders\shader_5_1_tex.vert" />
+    <None Include="shaders\shader_shadow.frag" />
+    <None Include="shaders\shader_shadow.vert" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="img\2.png">
