@@ -35,6 +35,7 @@ in vec3 viewDirTS;
 in vec3 lightDirTS;
 in vec3 spotlightDirTS;
 in vec3 sunDirTS;
+in vec4 sunSpacePos;
 
 in vec3 test;
 
@@ -49,6 +50,15 @@ float DistributionGGX(vec3 normal, vec3 H, float roughness){
     denom = PI * denom * denom;
 	
     return num / denom;
+}
+float calculateShadow(){
+    vec4 sunSpacePosNorm = sunSpacePos/sunSpacePos.w;
+    vec4 sunSpacePosNormalized = sunSpacePosNorm*0.5f + 0.5f;
+    float closestDepth = texture(depthMap, sunSpacePosNormalized.xy).r;
+    if(closestDepth+0.01f>sunSpacePosNormalized.z){
+        return 1.0;
+    }
+    return 0.;
 }
 float GeometrySchlickGGX(float NdotV, float roughness){
     float r = (roughness + 1.0);
@@ -126,7 +136,7 @@ void main()
 	ilumination=ilumination+PBRLight(spotlightDir,attenuatedlightColor,normal,viewDir);
 
 	//sun
-	ilumination=ilumination+PBRLight(sunDir,sunColor,normal,viewDir);
+	ilumination=ilumination+PBRLight(sunDir,sunColor*calculateShadow(),normal,viewDir);
 
     
 	outColor = vec4(vec3(1.0) - exp(-ilumination*exposition),1);
