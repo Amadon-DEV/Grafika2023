@@ -6,7 +6,7 @@
 #include <iostream>
 #include <cmath>
 
-#include "shadows.hpp"
+#include "render_scene.hpp"
 #include "stringHelper.hpp"
 
 
@@ -25,7 +25,7 @@ int main(int argc, char** argv)
 #endif
 
 	// tworzenie okna za pomoca glfw
-	GLFWwindow* window = glfwCreateWindow(500, 500, "FirstWindow", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(500, 500, "SSAOProject", NULL, NULL);
 	if (window == NULL)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;

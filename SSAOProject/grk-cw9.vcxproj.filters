@@ -86,11 +86,14 @@
     <ClInclude Include="src\SOIL\image_DXT.h">
       <Filter>Source Files\SOIL</Filter>
     </ClInclude>
-    <ClInclude Include="src\shadows.hpp">
+    <ClInclude Include="src\render_scene.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="src\stringHelper.hpp">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\skyox_util.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

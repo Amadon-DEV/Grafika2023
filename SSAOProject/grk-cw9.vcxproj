@@ -24,7 +24,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Camera.h" />
-    <ClInclude Include="src\shadows.hpp" />
+    <ClInclude Include="src\render_scene.hpp" />
     <ClInclude Include="src\objload.h" />
     <ClInclude Include="src\Render_Utils.h" />
     <ClInclude Include="src\Shader_Loader.h" />
@@ -36,6 +36,7 @@
     <ClInclude Include="src\SOIL\stb_image_aug.h" />
     <ClInclude Include="src\stringHelper.hpp" />
     <ClInclude Include="src\Texture.h" />
+    <ClInclude Include="src\utils\skyox_util.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="img\3.webp" />
