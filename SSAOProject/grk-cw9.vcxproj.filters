@@ -92,7 +92,7 @@
     <ClInclude Include="src\stringHelper.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\utils\skyox_util.h">
+    <ClInclude Include="src\utils\skybox_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -126,6 +126,8 @@
     <None Include="shaders\shader_5_1_tex.vert" />
     <None Include="shaders\shader_shadow.frag" />
     <None Include="shaders\shader_shadow.vert" />
+    <None Include="shaders\shader_skybox.vert" />
+    <None Include="shaders\shader_skybox.frag" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="img\2.png">

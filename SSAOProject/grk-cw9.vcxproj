@@ -36,7 +36,7 @@
     <ClInclude Include="src\SOIL\stb_image_aug.h" />
     <ClInclude Include="src\stringHelper.hpp" />
     <ClInclude Include="src\Texture.h" />
-    <ClInclude Include="src\utils\skyox_util.h" />
+    <ClInclude Include="src\utils\skybox_util.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="img\3.webp" />
@@ -54,6 +54,8 @@
     <None Include="shaders\shader_8_sun.vert" />
     <None Include="shaders\shader_shadow.frag" />
     <None Include="shaders\shader_shadow.vert" />
+    <None Include="shaders\shader_skybox.frag" />
+    <None Include="shaders\shader_skybox.vert" />
     <None Include="shaders\test.frag" />
     <None Include="shaders\test.vert" />
   </ItemGroup>
