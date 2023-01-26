@@ -52,8 +52,8 @@ float skyboxVertices[] = {
 std::vector<std::string> getCubemapFaces() {
 	std::string parentDirectory = "./textures/skybox/";
 	std::vector<std::string> cubemapFaces;
-	cubemapFaces.push_back(parentDirectory + "right.jpg");
 	cubemapFaces.push_back(parentDirectory + "left.jpg");
+    cubemapFaces.push_back(parentDirectory + "right.jpg");
 	cubemapFaces.push_back(parentDirectory + "top.jpg");
 	cubemapFaces.push_back(parentDirectory + "bottom.jpg");
 	cubemapFaces.push_back(parentDirectory + "front.jpg");
