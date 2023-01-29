@@ -55,7 +55,7 @@ float calculateShadow(){
     vec4 sunSpacePosNorm = sunSpacePos/sunSpacePos.w;
     vec4 sunSpacePosNormalized = sunSpacePosNorm*0.5f + 0.5f;
     float closestDepth = texture(depthMap, sunSpacePosNormalized.xy).r;
-    if(closestDepth+0.01f>sunSpacePosNormalized.z){
+    if(closestDepth+0.001f>sunSpacePosNormalized.z){
         return 1.0;
     }
     return 0.;

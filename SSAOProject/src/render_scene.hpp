@@ -17,7 +17,7 @@
 #include "utils/skybox_util.h"
 #include "SOIL/stb_image_aug.h"
 
-const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+const unsigned int SHADOW_WIDTH = 8192, SHADOW_HEIGHT = 8192;
 unsigned int skyboxVAO, skyboxVBO, cubemapTexture;
 
 int WIDTH = 500, HEIGHT = 500;
