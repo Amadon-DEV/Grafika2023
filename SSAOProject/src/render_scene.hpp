@@ -17,7 +17,7 @@
 #include "utils/skybox_util.h"
 #include "SOIL/stb_image_aug.h"
 
-const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+const unsigned int SHADOW_WIDTH = 8192, SHADOW_HEIGHT = 8192;
 unsigned int skyboxVAO, skyboxVBO, cubemapTexture;
 
 int WIDTH = 500, HEIGHT = 500;
@@ -68,6 +68,7 @@ namespace models {
 
 	Core::RenderContext spaceshipContext;
 	Core::RenderContext sphereContext;
+	Core::RenderContext testContext;
 
 	/*
 	Core::RenderContext bedContext;
@@ -102,10 +103,13 @@ Core::Shader_Loader shaderLoader;
 Core::RenderContext shipContext;
 Core::RenderContext sphereContext;
 
-
-glm::vec3 sunPos = glm::vec3(-4.740971f, 2.149999f, 0.369280f);
-glm::vec3 sunDir = glm::vec3(-0.93633f, 0.351106, 0.003226f);
+//DO NOT TOUCH
+glm::vec3 sunPos = glm::vec3(15.740971f, 7.149999f, -6.369280f);
+glm::vec3 sunDir = glm::vec3(0.93633f, 0.351106, 0.003226f);
 glm::vec3 sunColor = glm::vec3(0.9f, 0.9f, 0.7f) * 5;
+
+//glm::vec3 sunPos = glm::vec3(-4.740971f, 2.149999f, 0.369280f);
+//glm::vec3 sunDir = glm::vec3(-0.93633f, 0.351106, 0.003226f);
 
 glm::vec3 cameraPos = glm::vec3(0.479490f, 1.250000f, -2.124680f);
 glm::vec3 cameraDir = glm::vec3(-0.354510f, 0.000000f, 0.935054f);
@@ -114,6 +118,8 @@ glm::vec3 cameraDir = glm::vec3(-0.354510f, 0.000000f, 0.935054f);
 glm::vec3 spaceshipPos = glm::vec3(0.065808f, 1.250000f, -2.189549f);
 glm::vec3 spaceshipDir = glm::vec3(-0.490263f, 0.000000f, 0.871578f);
 GLuint VAO, VBO;
+
+
 
 float aspectRatio = 1.f;
 
@@ -127,6 +133,8 @@ glm::vec3 spotlightConeDir = glm::vec3(0, 0, 0);
 glm::vec3 spotlightColor = glm::vec3(0.4, 0.4, 0.9) * 3;
 float spotlightPhi = 3.14 / 4;
 
+//DO NOT TOUCH
+glm::mat4 lightVP = glm::ortho(-15.f, 2.f, -10.f, 10.f, -5.0f, 35.0f) * glm::lookAt(sunPos, sunPos - sunDir, glm::vec3(0, 1, 0));
 
 float lastTime = -1.f;
 float deltaTime = 0.f;
@@ -214,7 +222,7 @@ void drawObjectPBR(Core::RenderContext& context, glm::mat4 modelMatrix, glm::vec
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, depthMap);
-	glm::mat4 lightVP = glm::ortho(-3.f, 2.2f, -2.f, 3.5f, 1.f, 30.0f) * glm::lookAt(sunPos, sunPos - sunDir, glm::vec3(0, 1, 0));
+	//glm::mat4 lightVP = glm::ortho(-3.f, 2.2f, -2.f, 3.5f, 1.f, 30.0f) * glm::lookAt(sunPos, sunPos - sunDir, glm::vec3(0, 1, 0));
 
 	glUniformMatrix4fv(glGetUniformLocation(program, "lightVP"), 1, GL_FALSE, (float*)&lightVP);
 
@@ -255,11 +263,10 @@ void renderShadowapSun() {
 	glClear(GL_DEPTH_BUFFER_BIT);
 	//ustawianie programu
 	glUseProgram(programDepth);
-	glm::mat4 viewProjection = glm::ortho(-3.f, 2.2f, -2.f, 3.5f, 1.f, 30.0f) * glm::lookAt(sunPos, sunPos - sunDir, glm::vec3(0, 1, 0));
+	glm::mat4 viewProjection = lightVP;
 	
-	drawObjectDepth(sphereContext, glm::translate(pointlightPos) * glm::scale(glm::vec3(0.1)) * glm::eulerAngleY(time / 3) * glm::translate(glm::vec3(4.f, 0, 0)) * glm::scale(glm::vec3(0.3f)), glm::mat4());
-	drawObjectDepth(sphereContext,
-		glm::translate(pointlightPos) * glm::scale(glm::vec3(0.1)) * glm::eulerAngleY(time / 3) * glm::translate(glm::vec3(4.f, 0, 0)) * glm::eulerAngleY(time) * glm::translate(glm::vec3(1.f, 0, 0)) * glm::scale(glm::vec3(0.1f)), glm::mat4());
+	//drawObjectDepth(sphereContext, glm::translate(pointlightPos) * glm::scale(glm::vec3(0.1)) * glm::eulerAngleY(time / 3) * glm::translate(glm::vec3(4.f, 0, 0)) * glm::scale(glm::vec3(0.3f)), glm::mat4());
+	//drawObjectDepth(sphereContext, glm::translate(pointlightPos) * glm::scale(glm::vec3(0.1)) * glm::eulerAngleY(time / 3) * glm::translate(glm::vec3(4.f, 0, 0)) * glm::eulerAngleY(time) * glm::translate(glm::vec3(1.f, 0, 0)) * glm::scale(glm::vec3(0.1f)), glm::mat4());
 	
 	
 
@@ -358,18 +365,17 @@ void renderScene(GLFWwindow* window)
 	glUniform1f(glGetUniformLocation(programSun, "exposition"), exposition);
 	
 
-	Core::DrawContext(sphereContext);
+	//Core::DrawContext(sphereContext);
 
 	glUseProgram(program);
 
-	drawObjectPBR(sphereContext, glm::translate(pointlightPos) * glm::scale(glm::vec3(0.1)) * glm::eulerAngleY(time / 3) * glm::translate(glm::vec3(4.f, 0, 0)) * glm::scale(glm::vec3(0.3f)), glm::vec3(0.2, 0.7, 0.3), 0.3, 0.0);
+	//drawObjectPBR(sphereContext, glm::translate(pointlightPos) * glm::scale(glm::vec3(0.1)) * glm::eulerAngleY(time / 3) * glm::translate(glm::vec3(4.f, 0, 0)) * glm::scale(glm::vec3(0.3f)), glm::vec3(0.2, 0.7, 0.3), 0.3, 0.0);
 
-	drawObjectPBR(sphereContext,
-		glm::translate(pointlightPos) * glm::scale(glm::vec3(0.1)) * glm::eulerAngleY(time / 3) * glm::translate(glm::vec3(4.f, 0, 0)) * glm::eulerAngleY(time) * glm::translate(glm::vec3(1.f, 0, 0)) * glm::scale(glm::vec3(0.1f)),
-		glm::vec3(0.5, 0.5, 0.5), 0.7, 0.0);
+	//drawObjectPBR(sphereContext,glm::translate(pointlightPos) * glm::scale(glm::vec3(0.1)) * glm::eulerAngleY(time / 3) * glm::translate(glm::vec3(4.f, 0, 0)) * glm::eulerAngleY(time) * glm::translate(glm::vec3(1.f, 0, 0)) * glm::scale(glm::vec3(0.1f)),glm::vec3(0.5, 0.5, 0.5), 0.7, 0.0);
 
 
 	drawObjectPBR(models::wallsContext, glm::mat4(), glm::vec3(0.0924f, 0.465f, 0.770f), 0.8f, 0.0f);
+	drawObjectPBR(sphereContext, glm::translate(sunPos) * glm::mat4(), glm::vec3(0.0924f, 0.465f, 0.770f), 0.8f, 0.0f);
 	drawObjectPBR(models::planeContext, glm::mat4(), glm::vec3(0.630f, 0.413f, 0.2378f), 0.2f, 0.0f);
 	drawObjectPBR(models::floorContext, glm::mat4(), glm::vec3(0.630f, 0.413f, 0.2378f), 0.2f, 0.0f);
 	drawObjectPBR(models::roofContext, glm::mat4(), glm::vec3(0.9f, 0.9f, 0.9f), 0.8f, 0.0f);
@@ -450,7 +456,13 @@ void renderScene(GLFWwindow* window)
 	spotlightConeDir = spaceshipDir;
 
 	renderSkybox();
-
+	
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//glUseProgram(programTest);
+	//glActiveTexture(GL_TEXTURE0);
+	//glBindTexture(GL_TEXTURE_2D, depthMap);
+	//Core::DrawContext(models::testContext);
+	
 	glUseProgram(0);
 	glfwSwapBuffers(window);
 }
@@ -588,7 +600,6 @@ void loadModels() {
 	loadModelToContext("./models/lamp_part4.obj", models::lampPart4Context);
 	loadModelToContext("./models/lamp_part5.obj", models::lampPart5Context);
 	loadModelToContext("./models/lamp_bulb.obj", models::lampBulbContext);
-
 
 	/*
 	loadModelToContext("./models/bed.obj", models::bedContext);
