@@ -125,6 +125,10 @@ float aspectRatio = 1.f;
 
 float exposition = 5.f;
 
+float planetSize = 1.f;
+float orbitSize = 4.f;
+float changeSpin = 1;
+
 glm::vec3 pointlightPos = glm::vec3(0, 2, 0);
 glm::vec3 pointlightColor = glm::vec3(0.9, 0.6, 0.6);
 
@@ -365,7 +369,7 @@ void renderScene(GLFWwindow* window)
 	glUniform1f(glGetUniformLocation(programSun, "exposition"), exposition);
 	
 
-	//Core::DrawContext(sphereContext);
+	Core::DrawContext(sphereContext);
 
 	glUseProgram(program);
 
@@ -373,6 +377,12 @@ void renderScene(GLFWwindow* window)
 
 	//drawObjectPBR(sphereContext,glm::translate(pointlightPos) * glm::scale(glm::vec3(0.1)) * glm::eulerAngleY(time / 3) * glm::translate(glm::vec3(4.f, 0, 0)) * glm::eulerAngleY(time) * glm::translate(glm::vec3(1.f, 0, 0)) * glm::scale(glm::vec3(0.1f)),glm::vec3(0.5, 0.5, 0.5), 0.7, 0.0);
 
+
+	drawObjectPBR(sphereContext, glm::translate(pointlightPos) * glm::scale(glm::vec3(0.1)) * glm::eulerAngleY(time / 3) * glm::translate(glm::vec3(4.f, 0, 0)) * glm::scale(glm::vec3(0.3f * planetSize)), glm::vec3(0.2, 0.7, 0.3), 0.3, 0.0);
+
+	drawObjectPBR(sphereContext,
+		glm::translate(pointlightPos) * glm::scale(glm::vec3(0.1)) * glm::eulerAngleY(time / 3) * glm::translate(glm::vec3(orbitSize, 0, 0)) * glm::eulerAngleY(time * changeSpin) * glm::translate(glm::vec3(1.f, 0, 0)) * glm::scale(glm::vec3(0.1f)),
+		glm::vec3(0.5, 0.5, 0.5), 0.7, 0.0);
 
 	drawObjectPBR(models::wallsContext, glm::mat4(), glm::vec3(0.0924f, 0.465f, 0.770f), 0.8f, 0.0f);
 	drawObjectPBR(sphereContext, glm::translate(sunPos) * glm::mat4(), glm::vec3(0.0924f, 0.465f, 0.770f), 0.8f, 0.0f);
@@ -672,7 +682,18 @@ void processInput(GLFWwindow* window)
 		spaceshipDir = glm::vec3(glm::eulerAngleY(angleSpeed) * glm::vec4(spaceshipDir, 0));
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		spaceshipDir = glm::vec3(glm::eulerAngleY(-angleSpeed) * glm::vec4(spaceshipDir, 0));
-
+	if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
+		planetSize += 0.1f;
+		orbitSize += 0.1f;
+	}
+	if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS && (planetSize - 0.2f > 0) && (orbitSize - 0.02f > 0)) {
+		planetSize -= 0.1f;
+		orbitSize -= 0.1f;
+	}
+	if (glfwGetKey(window, GLFW_KEY_Y) == GLFW_PRESS)
+		changeSpin = -1;
+	if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS)
+		changeSpin = 1;
 	cameraPos = spaceshipPos - 0.5 * spaceshipDir + glm::vec3(0, 1, 0) * 0.2f;
 	cameraDir = spaceshipDir;
 
