@@ -23,6 +23,54 @@ unsigned int skyboxVAO, skyboxVBO, cubemapTexture;
 int WIDTH = 500, HEIGHT = 500;
 
 namespace models {
+	Core::RenderContext wallsContext;
+	Core::RenderContext planeContext;
+	Core::RenderContext floorContext;
+	Core::RenderContext roofContext;
+	Core::RenderContext window1Context;
+	Core::RenderContext window2Context;
+	Core::RenderContext doorContext;
+	Core::RenderContext bedLegsContext;
+	Core::RenderContext bedMainContext;
+	Core::RenderContext bedBackContext;
+	Core::RenderContext bedMateraceContext;
+	Core::RenderContext bedSphereContext;
+	Core::RenderContext nightstand1LegsContext;
+	Core::RenderContext nightstand1MainContext;
+	Core::RenderContext nightstand1SphereContext;
+	Core::RenderContext bedlamp1MainContext;
+	Core::RenderContext bedlamp1TopContext;
+	Core::RenderContext nightstand2LegsContext;
+	Core::RenderContext nightstand2MainContext;
+	Core::RenderContext nightstand2SphereContext;
+	Core::RenderContext bedlamp2MainContext;
+	Core::RenderContext bedlamp2TopContext;
+	Core::RenderContext wardrobeMainContext;
+	Core::RenderContext wardrobeSphere1Context;
+	Core::RenderContext wardrobeSphere2Context;
+	Core::RenderContext bookshelfContext;
+	Core::RenderContext deskLegsContext;
+	Core::RenderContext deskMainContext;
+	Core::RenderContext deskTopContext;
+	Core::RenderContext deskDrawerContext;
+	Core::RenderContext deskSphereContext;
+	Core::RenderContext tvBottomContext;
+	Core::RenderContext tvMiddleContext;
+	Core::RenderContext tvTopContext;
+	Core::RenderContext tvMainContext;
+	Core::RenderContext chairContext;
+	Core::RenderContext lampPart1Context;
+	Core::RenderContext lampPart2Context;
+	Core::RenderContext lampPart3Context;
+	Core::RenderContext lampPart4Context;
+	Core::RenderContext lampPart5Context;
+	Core::RenderContext lampBulbContext;
+
+	Core::RenderContext spaceshipContext;
+	Core::RenderContext sphereContext;
+	Core::RenderContext testContext;
+
+	/*
 	Core::RenderContext bedContext;
 	Core::RenderContext chairContext;
 	Core::RenderContext deskContext;
@@ -37,6 +85,7 @@ namespace models {
 	Core::RenderContext sphereContext;
 	Core::RenderContext windowContext;
 	Core::RenderContext testContext;
+	*/
 }
 
 GLuint depthMapFBO;
@@ -54,9 +103,13 @@ Core::Shader_Loader shaderLoader;
 Core::RenderContext shipContext;
 Core::RenderContext sphereContext;
 
-glm::vec3 sunPos = glm::vec3(-4.740971f, 2.149999f, 0.369280f);
-glm::vec3 sunDir = glm::vec3(-0.93633f, 0.351106, 0.003226f);
+//DO NOT TOUCH
+glm::vec3 sunPos = glm::vec3(15.740971f, 7.149999f, -6.369280f);
+glm::vec3 sunDir = glm::vec3(0.93633f, 0.351106, 0.003226f);
 glm::vec3 sunColor = glm::vec3(0.9f, 0.9f, 0.7f) * 5;
+
+//glm::vec3 sunPos = glm::vec3(-4.740971f, 2.149999f, 0.369280f);
+//glm::vec3 sunDir = glm::vec3(-0.93633f, 0.351106, 0.003226f);
 
 glm::vec3 cameraPos = glm::vec3(0.479490f, 1.250000f, -2.124680f);
 glm::vec3 cameraDir = glm::vec3(-0.354510f, 0.000000f, 0.935054f);
@@ -66,9 +119,15 @@ glm::vec3 spaceshipPos = glm::vec3(0.065808f, 1.250000f, -2.189549f);
 glm::vec3 spaceshipDir = glm::vec3(-0.490263f, 0.000000f, 0.871578f);
 GLuint VAO, VBO;
 
+
+
 float aspectRatio = 1.f;
 
 float exposition = 5.f;
+
+float planetSize = 1.f;
+float orbitSize = 4.f;
+float changeSpin = 1;
 
 glm::vec3 pointlightPos = glm::vec3(0, 2, 0);
 glm::vec3 pointlightColor = glm::vec3(0.9, 0.6, 0.6);
@@ -78,6 +137,8 @@ glm::vec3 spotlightConeDir = glm::vec3(0, 0, 0);
 glm::vec3 spotlightColor = glm::vec3(0.4, 0.4, 0.9) * 3;
 float spotlightPhi = 3.14 / 4;
 
+//DO NOT TOUCH
+glm::mat4 lightVP = glm::ortho(-15.f, 2.f, -10.f, 10.f, -5.0f, 35.0f) * glm::lookAt(sunPos, sunPos - sunDir, glm::vec3(0, 1, 0));
 
 float lastTime = -1.f;
 float deltaTime = 0.f;
@@ -165,7 +226,7 @@ void drawObjectPBR(Core::RenderContext& context, glm::mat4 modelMatrix, glm::vec
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, depthMap);
-	glm::mat4 lightVP = glm::ortho(-3.f, 2.2f, -2.f, 3.5f, 1.f, 30.0f) * glm::lookAt(sunPos, sunPos - sunDir, glm::vec3(0, 1, 0));
+	//glm::mat4 lightVP = glm::ortho(-3.f, 2.2f, -2.f, 3.5f, 1.f, 30.0f) * glm::lookAt(sunPos, sunPos - sunDir, glm::vec3(0, 1, 0));
 
 	glUniformMatrix4fv(glGetUniformLocation(program, "lightVP"), 1, GL_FALSE, (float*)&lightVP);
 
@@ -206,11 +267,57 @@ void renderShadowapSun() {
 	glClear(GL_DEPTH_BUFFER_BIT);
 	//ustawianie programu
 	glUseProgram(programDepth);
-	glm::mat4 viewProjection = glm::ortho(-3.f, 2.2f, -2.f, 3.5f, 1.f, 30.0f) * glm::lookAt(sunPos, sunPos - sunDir, glm::vec3(0, 1, 0));
-	drawObjectDepth(sphereContext, glm::translate(pointlightPos) * glm::scale(glm::vec3(0.1)) * glm::eulerAngleY(time / 3) * glm::translate(glm::vec3(4.f, 0, 0)) * glm::scale(glm::vec3(0.3f)), glm::mat4());
-	drawObjectDepth(sphereContext,
-		glm::translate(pointlightPos) * glm::scale(glm::vec3(0.1)) * glm::eulerAngleY(time / 3) * glm::translate(glm::vec3(4.f, 0, 0)) * glm::eulerAngleY(time) * glm::translate(glm::vec3(1.f, 0, 0)) * glm::scale(glm::vec3(0.1f)), glm::mat4());
+	glm::mat4 viewProjection = lightVP;
+	
+	//drawObjectDepth(sphereContext, glm::translate(pointlightPos) * glm::scale(glm::vec3(0.1)) * glm::eulerAngleY(time / 3) * glm::translate(glm::vec3(4.f, 0, 0)) * glm::scale(glm::vec3(0.3f)), glm::mat4());
+	//drawObjectDepth(sphereContext, glm::translate(pointlightPos) * glm::scale(glm::vec3(0.1)) * glm::eulerAngleY(time / 3) * glm::translate(glm::vec3(4.f, 0, 0)) * glm::eulerAngleY(time) * glm::translate(glm::vec3(1.f, 0, 0)) * glm::scale(glm::vec3(0.1f)), glm::mat4());
+	
+	
 
+	drawObjectDepth(models::wallsContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::planeContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::floorContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::roofContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::window1Context, viewProjection, glm::mat4());
+	drawObjectDepth(models::window2Context, viewProjection, glm::mat4());
+	drawObjectDepth(models::doorContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::bedLegsContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::bedMainContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::bedBackContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::bedMateraceContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::bedSphereContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::nightstand1LegsContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::nightstand1MainContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::nightstand1SphereContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::bedlamp1MainContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::bedlamp1TopContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::nightstand2LegsContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::nightstand2MainContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::nightstand2SphereContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::bedlamp2MainContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::bedlamp2TopContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::wardrobeMainContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::wardrobeSphere1Context, viewProjection, glm::mat4());
+	drawObjectDepth(models::wardrobeSphere2Context, viewProjection, glm::mat4());
+	drawObjectDepth(models::bookshelfContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::deskLegsContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::deskMainContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::deskTopContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::deskDrawerContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::deskSphereContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::tvBottomContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::tvMiddleContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::tvTopContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::tvMainContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::chairContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::lampPart1Context, viewProjection, glm::mat4());
+	drawObjectDepth(models::lampPart2Context, viewProjection, glm::mat4());
+	drawObjectDepth(models::lampPart3Context, viewProjection, glm::mat4());
+	drawObjectDepth(models::lampPart4Context, viewProjection, glm::mat4());
+	drawObjectDepth(models::lampPart5Context, viewProjection, glm::mat4());
+	drawObjectDepth(models::lampBulbContext, viewProjection, glm::mat4());
+
+	/*
 	drawObjectDepth(models::bedContext, viewProjection, glm::mat4());
 	drawObjectDepth(models::chairContext, viewProjection, glm::mat4());
 	drawObjectDepth(models::deskContext, viewProjection, glm::mat4());
@@ -222,6 +329,7 @@ void renderShadowapSun() {
 	drawObjectDepth(models::planeContext, viewProjection, glm::mat4());
 	drawObjectDepth(models::roomContext, viewProjection, glm::mat4());
 	drawObjectDepth(models::windowContext, viewProjection, glm::mat4());
+	*/
 
 	glm::vec3 spaceshipSide = glm::normalize(glm::cross(spaceshipDir, glm::vec3(0.f, 1.f, 0.f)));
 	glm::vec3 spaceshipUp = glm::normalize(glm::cross(spaceshipSide, spaceshipDir));
@@ -259,17 +367,68 @@ void renderScene(GLFWwindow* window)
 	glUniformMatrix4fv(glGetUniformLocation(programSun, "transformation"), 1, GL_FALSE, (float*)&transformation);
 	glUniform3f(glGetUniformLocation(programSun, "color"), sunColor.x / 2, sunColor.y / 2, sunColor.z / 2);
 	glUniform1f(glGetUniformLocation(programSun, "exposition"), exposition);
+	
+
 	Core::DrawContext(sphereContext);
 
 	glUseProgram(program);
 
+	//drawObjectPBR(sphereContext, glm::translate(pointlightPos) * glm::scale(glm::vec3(0.1)) * glm::eulerAngleY(time / 3) * glm::translate(glm::vec3(4.f, 0, 0)) * glm::scale(glm::vec3(0.3f)), glm::vec3(0.2, 0.7, 0.3), 0.3, 0.0);
 
-	drawObjectPBR(sphereContext, glm::translate(pointlightPos) * glm::scale(glm::vec3(0.1)) * glm::eulerAngleY(time / 3) * glm::translate(glm::vec3(4.f, 0, 0)) * glm::scale(glm::vec3(0.3f)), glm::vec3(0.2, 0.7, 0.3), 0.3, 0.0);
+	//drawObjectPBR(sphereContext,glm::translate(pointlightPos) * glm::scale(glm::vec3(0.1)) * glm::eulerAngleY(time / 3) * glm::translate(glm::vec3(4.f, 0, 0)) * glm::eulerAngleY(time) * glm::translate(glm::vec3(1.f, 0, 0)) * glm::scale(glm::vec3(0.1f)),glm::vec3(0.5, 0.5, 0.5), 0.7, 0.0);
+
+
+	drawObjectPBR(sphereContext, glm::translate(pointlightPos) * glm::scale(glm::vec3(0.1)) * glm::eulerAngleY(time / 3) * glm::translate(glm::vec3(4.f, 0, 0)) * glm::scale(glm::vec3(0.3f * planetSize)), glm::vec3(0.2, 0.7, 0.3), 0.3, 0.0);
 
 	drawObjectPBR(sphereContext,
-		glm::translate(pointlightPos) * glm::scale(glm::vec3(0.1)) * glm::eulerAngleY(time / 3) * glm::translate(glm::vec3(4.f, 0, 0)) * glm::eulerAngleY(time) * glm::translate(glm::vec3(1.f, 0, 0)) * glm::scale(glm::vec3(0.1f)),
+		glm::translate(pointlightPos) * glm::scale(glm::vec3(0.1)) * glm::eulerAngleY(time / 3) * glm::translate(glm::vec3(orbitSize, 0, 0)) * glm::eulerAngleY(time * changeSpin) * glm::translate(glm::vec3(1.f, 0, 0)) * glm::scale(glm::vec3(0.1f)),
 		glm::vec3(0.5, 0.5, 0.5), 0.7, 0.0);
 
+	drawObjectPBR(models::wallsContext, glm::mat4(), glm::vec3(0.0924f, 0.465f, 0.770f), 0.8f, 0.0f);
+	drawObjectPBR(sphereContext, glm::translate(sunPos) * glm::mat4(), glm::vec3(0.0924f, 0.465f, 0.770f), 0.8f, 0.0f);
+	drawObjectPBR(models::planeContext, glm::mat4(), glm::vec3(0.630f, 0.413f, 0.2378f), 0.2f, 0.0f);
+	drawObjectPBR(models::floorContext, glm::mat4(), glm::vec3(0.630f, 0.413f, 0.2378f), 0.2f, 0.0f);
+	drawObjectPBR(models::roofContext, glm::mat4(), glm::vec3(0.9f, 0.9f, 0.9f), 0.8f, 0.0f);
+	drawObjectPBR(models::window1Context, glm::mat4(), glm::vec3(0.250f, 0.250f, 0.250f), 0.2f, 0.0f);
+	drawObjectPBR(models::window2Context, glm::mat4(), glm::vec3(0.250f, 0.250f, 0.250f), 0.2f, 0.0f);
+	drawObjectPBR(models::doorContext, glm::mat4(), glm::vec3(0.250f, 0.250f, 0.250f), 0.2f, 0.0f);
+	drawObjectPBR(models::bedLegsContext, glm::mat4(), glm::vec3(0.228691f, 0.08022f, 0.036889f), 0.2f, 0.0f);
+	drawObjectPBR(models::bedMainContext, glm::mat4(), glm::vec3(0.228691f, 0.08022f, 0.036889f), 0.2f, 0.0f);
+	drawObjectPBR(models::bedBackContext, glm::mat4(), glm::vec3(0.228691f, 0.08022f, 0.036889f), 0.2f, 0.0f);
+	drawObjectPBR(models::bedMateraceContext, glm::mat4(), glm::vec3(0.9f, 0.9f, 0.9f), 0.8f, 0.0f);
+	drawObjectPBR(models::bedSphereContext, glm::mat4(), glm::vec3(0.9f, 0.9f, 0.9f), 0.8f, 0.0f);
+	drawObjectPBR(models::nightstand1LegsContext, glm::mat4(), glm::vec3(0.228691f, 0.08022f, 0.036889f), 0.2f, 0.0f);
+	drawObjectPBR(models::nightstand1MainContext, glm::mat4(), glm::vec3(0.228691f, 0.08022f, 0.036889f), 0.2f, 0.0f);
+	drawObjectPBR(models::nightstand1SphereContext, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 0.0f);
+	drawObjectPBR(models::bedlamp1MainContext, glm::mat4(), glm::vec3(0.0138f, 0.690f, 0.149f), 0.2f, 0.0f);
+	drawObjectPBR(models::bedlamp1TopContext, glm::mat4(), glm::vec3(1.00f, 0.957f, 0.140f), 0.2f, 0.0f);
+	drawObjectPBR(models::nightstand2LegsContext, glm::mat4(), glm::vec3(0.228691f, 0.08022f, 0.036889f), 0.2f, 0.0f);
+	drawObjectPBR(models::nightstand2MainContext, glm::mat4(), glm::vec3(0.228691f, 0.08022f, 0.036889f), 0.2f, 0.0f);
+	drawObjectPBR(models::nightstand2SphereContext, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 0.0f);
+	drawObjectPBR(models::bedlamp2MainContext, glm::mat4(), glm::vec3(0.0138f, 0.690f, 0.149f), 0.2f, 0.0f);
+	drawObjectPBR(models::bedlamp2TopContext, glm::mat4(), glm::vec3(1.00f, 0.957f, 0.140f), 0.2f, 0.0f);
+	drawObjectPBR(models::wardrobeMainContext, glm::mat4(), glm::vec3(0.228691f, 0.08022f, 0.036889f), 0.2f, 0.0f);
+	drawObjectPBR(models::wardrobeSphere1Context, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 0.0f);
+	drawObjectPBR(models::wardrobeSphere2Context, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 0.0f);
+	drawObjectPBR(models::bookshelfContext, glm::mat4(), glm::vec3(0.228691f, 0.08022f, 0.036889f), 0.2f, 0.0f);
+	drawObjectPBR(models::deskLegsContext, glm::mat4(), glm::vec3(0.228691f, 0.08022f, 0.036889f), 0.2f, 0.0f);
+	drawObjectPBR(models::deskMainContext, glm::mat4(), glm::vec3(0.228691f, 0.08022f, 0.036889f), 0.2f, 0.0f);
+	drawObjectPBR(models::deskTopContext, glm::mat4(), glm::vec3(0.228691f, 0.08022f, 0.036889f), 0.2f, 0.0f);
+	drawObjectPBR(models::deskDrawerContext, glm::mat4(), glm::vec3(0.228691f, 0.08022f, 0.036889f), 0.2f, 0.0f);
+	drawObjectPBR(models::deskSphereContext, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 0.0f);
+	drawObjectPBR(models::tvBottomContext, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 1.0f);
+	drawObjectPBR(models::tvMiddleContext, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 1.0f);
+	drawObjectPBR(models::tvTopContext, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 1.0f);
+	drawObjectPBR(models::tvMainContext, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 1.0f);
+	drawObjectPBR(models::chairContext, glm::mat4(), glm::vec3(0.830f, 0.0830f, 0.158f), 0.4f, 0.0f);
+	drawObjectPBR(models::lampPart1Context, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 0.0f);
+	drawObjectPBR(models::lampPart2Context, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 0.0f);
+	drawObjectPBR(models::lampPart3Context, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 0.0f);
+	drawObjectPBR(models::lampPart4Context, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 0.0f);
+	drawObjectPBR(models::lampPart5Context, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 0.0f);
+	drawObjectPBR(models::lampBulbContext, glm::mat4(), glm::vec3(0.9f, 0.9f, 0.9f), 0.2f, 0.0f);
+
+	/*
 	drawObjectPBR(models::bedContext, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 0.0f);
 	drawObjectPBR(models::chairContext, glm::mat4(), glm::vec3(0.195239f, 0.37728f, 0.8f), 0.4f, 0.0f);
 	drawObjectPBR(models::deskContext, glm::mat4(), glm::vec3(0.428691f, 0.08022f, 0.036889f), 0.2f, 0.0f);
@@ -281,6 +440,7 @@ void renderScene(GLFWwindow* window)
 	drawObjectPBR(models::planeContext, glm::mat4(), glm::vec3(0.402978f, 0.120509f, 0.057729f), 0.2f, 0.0f);
 	drawObjectPBR(models::roomContext, glm::mat4(), glm::vec3(0.9f, 0.9f, 0.9f), 0.8f, 0.0f);
 	drawObjectPBR(models::windowContext, glm::mat4(), glm::vec3(0.402978f, 0.120509f, 0.057729f), 0.2f, 0.0f);
+	*/
 
 	glm::vec3 spaceshipSide = glm::normalize(glm::cross(spaceshipDir, glm::vec3(0.f, 1.f, 0.f)));
 	glm::vec3 spaceshipUp = glm::normalize(glm::cross(spaceshipSide, spaceshipDir));
@@ -306,7 +466,13 @@ void renderScene(GLFWwindow* window)
 	spotlightConeDir = spaceshipDir;
 
 	renderSkybox();
-
+	
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//glUseProgram(programTest);
+	//glActiveTexture(GL_TEXTURE0);
+	//glBindTexture(GL_TEXTURE_2D, depthMap);
+	//Core::DrawContext(models::testContext);
+	
 	glUseProgram(0);
 	glfwSwapBuffers(window);
 }
@@ -402,6 +568,50 @@ void loadModels() {
 	loadModelToContext("./models/spaceship.obj", shipContext);
 
 
+	loadModelToContext("./models/walls.obj", models::wallsContext);
+	loadModelToContext("./models/plane.obj", models::planeContext);
+	loadModelToContext("./models/floor.obj", models::floorContext);
+	loadModelToContext("./models/roof.obj", models::roofContext);
+	loadModelToContext("./models/window1.obj", models::window1Context);
+	loadModelToContext("./models/window2.obj", models::window2Context);
+	loadModelToContext("./models/door.obj", models::doorContext);
+	loadModelToContext("./models/bed_legs.obj", models::bedLegsContext);
+	loadModelToContext("./models/bed_main.obj", models::bedMainContext);
+	loadModelToContext("./models/bed_back.obj", models::bedBackContext);
+	loadModelToContext("./models/bed_materace.obj", models::bedMateraceContext);
+	loadModelToContext("./models/bed_sphere.obj", models::bedSphereContext);
+	loadModelToContext("./models/nightstand1_legs.obj", models::nightstand1LegsContext);
+	loadModelToContext("./models/nightstand1_main.obj", models::nightstand1MainContext);
+	loadModelToContext("./models/nightstand1_sphere.obj", models::nightstand1SphereContext);
+	loadModelToContext("./models/bedlamp1_main.obj", models::bedlamp1MainContext);
+	loadModelToContext("./models/bedlamp1_top.obj", models::bedlamp1TopContext);
+	loadModelToContext("./models/nightstand2_legs.obj", models::nightstand2LegsContext);
+	loadModelToContext("./models/nightstand2_main.obj", models::nightstand2MainContext);
+	loadModelToContext("./models/nightstand2_sphere.obj", models::nightstand2SphereContext);
+	loadModelToContext("./models/bedlamp2_main.obj", models::bedlamp2MainContext);
+	loadModelToContext("./models/bedlamp2_top.obj", models::bedlamp2TopContext);
+	loadModelToContext("./models/wardrobe_main.obj", models::wardrobeMainContext);
+	loadModelToContext("./models/wardrobe_sphere1.obj", models::wardrobeSphere1Context);
+	loadModelToContext("./models/wardrobe_sphere2.obj", models::wardrobeSphere2Context);
+	loadModelToContext("./models/bookshelf.obj", models::bookshelfContext);
+	loadModelToContext("./models/desk_legs.obj", models::deskLegsContext);
+	loadModelToContext("./models/desk_main.obj", models::deskMainContext);
+	loadModelToContext("./models/desk_top.obj", models::deskTopContext);
+	loadModelToContext("./models/desk_drawer.obj", models::deskDrawerContext);
+	loadModelToContext("./models/desk_sphere.obj", models::deskSphereContext);
+	loadModelToContext("./models/tv_bottom.obj", models::tvBottomContext);
+	loadModelToContext("./models/tv_middle.obj", models::tvMiddleContext);
+	loadModelToContext("./models/tv_top.obj", models::tvTopContext);
+	loadModelToContext("./models/tv_main.obj", models::tvMainContext);
+	loadModelToContext("./models/chair.obj", models::chairContext);
+	loadModelToContext("./models/lamp_part1.obj", models::lampPart1Context);
+	loadModelToContext("./models/lamp_part2.obj", models::lampPart2Context);
+	loadModelToContext("./models/lamp_part3.obj", models::lampPart3Context);
+	loadModelToContext("./models/lamp_part4.obj", models::lampPart4Context);
+	loadModelToContext("./models/lamp_part5.obj", models::lampPart5Context);
+	loadModelToContext("./models/lamp_bulb.obj", models::lampBulbContext);
+
+	/*
 	loadModelToContext("./models/bed.obj", models::bedContext);
 	loadModelToContext("./models/chair.obj", models::chairContext);
 	loadModelToContext("./models/desk.obj", models::deskContext);
@@ -416,6 +626,7 @@ void loadModels() {
 	loadModelToContext("./models/sphere.obj", models::sphereContext);
 	loadModelToContext("./models/window.obj", models::windowContext);
 	loadModelToContext("./models/test.obj", models::testContext);
+	*/
 }
 
 void loadShaders() {
@@ -471,7 +682,18 @@ void processInput(GLFWwindow* window)
 		spaceshipDir = glm::vec3(glm::eulerAngleY(angleSpeed) * glm::vec4(spaceshipDir, 0));
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		spaceshipDir = glm::vec3(glm::eulerAngleY(-angleSpeed) * glm::vec4(spaceshipDir, 0));
-
+	if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
+		planetSize += 0.1f;
+		orbitSize += 0.1f;
+	}
+	if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS && (planetSize - 0.2f > 0) && (orbitSize - 0.02f > 0)) {
+		planetSize -= 0.1f;
+		orbitSize -= 0.1f;
+	}
+	if (glfwGetKey(window, GLFW_KEY_Y) == GLFW_PRESS)
+		changeSpin = -1;
+	if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS)
+		changeSpin = 1;
 	cameraPos = spaceshipPos - 0.5 * spaceshipDir + glm::vec3(0, 1, 0) * 0.2f;
 	cameraDir = spaceshipDir;
 
