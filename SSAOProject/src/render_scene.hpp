@@ -120,7 +120,8 @@ float planetSize = 1.f;
 float orbitSize = 4.f;
 float changeSpin = 1;
 
-glm::vec3 pointlightPos = glm::vec3(0, 2, 0);
+glm::vec3 pointlightPos = glm::vec3(0.3, 6.5f, 0.1);
+glm::vec3 pointlightDir = glm::vec3(0.5f, 0.5f, 0.5f);
 glm::vec3 pointlightColor = glm::vec3(0.9, 0.6, 0.6);
 
 glm::vec3 spotlightPos = glm::vec3(0, 0, 0);
@@ -130,6 +131,7 @@ float spotlightPhi = 3.14 / 4;
 
 //DO NOT TOUCH
 glm::mat4 lightVP = glm::ortho(-15.f, 2.f, -10.f, 10.f, -5.0f, 35.0f) * glm::lookAt(sunPos, sunPos - sunDir, glm::vec3(0, 1, 0));
+glm::mat4 lightVP2 = glm::ortho(-25.f, 10.f, -20.f, 20.f, -5.0f, 35.0f) * glm::lookAt(pointlightPos,  pointlightDir, glm::vec3(0, 1, 0));
 
 float lastTime = -1.f;
 float deltaTime = 0.f;
@@ -226,6 +228,7 @@ void drawObjectPBR(Core::RenderContext& context, glm::mat4 modelMatrix, glm::vec
 	//glm::mat4 lightVP = glm::ortho(-3.f, 2.2f, -2.f, 3.5f, 1.f, 30.0f) * glm::lookAt(sunPos, sunPos - sunDir, glm::vec3(0, 1, 0));
 
 	glUniformMatrix4fv(glGetUniformLocation(program, "lightVP"), 1, GL_FALSE, (float*)&lightVP);
+	glUniformMatrix4fv(glGetUniformLocation(program, "lightVP2"), 1, GL_FALSE, (float*)&lightVP2);
 
 	glUniform3f(glGetUniformLocation(program, "color"), color.x, color.y, color.z);
 
@@ -342,8 +345,38 @@ void renderShadowapSun() {
 	//	glm::translate(cameraPos + 1.5 * cameraDir + cameraUp * -0.5f) * inveseCameraRotrationMatrix * glm::eulerAngleY(glm::pi<float>()),
 	//	glm::vec3(0.3, 0.3, 0.5)
 	//	);
-	drawObjectDepth(shipContext,
-		viewProjection, glm::translate(spaceshipPos) * specshipCameraRotrationMatrix * glm::eulerAngleY(glm::pi<float>()) * glm::scale(glm::vec3(0.03f)));
+	drawObjectDepth(shipContext, viewProjection, glm::translate(spaceshipPos) * specshipCameraRotrationMatrix * glm::eulerAngleY(glm::pi<float>()) * glm::scale(glm::vec3(0.03f)));
+	viewProjection = lightVP2;
+	drawObjectDepth(shipContext, viewProjection, glm::translate(spaceshipPos) * specshipCameraRotrationMatrix * glm::eulerAngleY(glm::pi<float>()) * glm::scale(glm::vec3(0.03f)));
+	drawObjectDepth(models::doorContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::bedLegsContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::bedMainContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::bedBackContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::bedMateraceContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::bedSphereContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::nightstand1LegsContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::nightstand1MainContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::nightstand1SphereContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::bedlamp1MainContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::bedlamp1TopContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::nightstand2LegsContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::nightstand2MainContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::nightstand2SphereContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::bedlamp2MainContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::bedlamp2TopContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::bookshelfContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::deskLegsContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::deskMainContext, viewProjection, glm::mat4());
+	//drawObjectDepth(models::deskTopContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::deskDrawerContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::deskSphereContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::tvBottomContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::tvMiddleContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::tvTopContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::tvMainContext, viewProjection, glm::mat4());
+	drawObjectDepth(models::chairContext, viewProjection, glm::mat4());
+
+
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glViewport(0, 0, WIDTH, HEIGHT);

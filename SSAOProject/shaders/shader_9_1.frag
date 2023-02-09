@@ -36,6 +36,7 @@ in vec3 lightDirTS;
 in vec3 spotlightDirTS;
 in vec3 sunDirTS;
 in vec4 sunSpacePos;
+in vec4 lightSpacePos;
 
 in vec3 test;
 
@@ -57,6 +58,16 @@ float calculateShadow(){
     float closestDepth = texture(depthMap, sunSpacePosNormalized.xy).r;
     vec3 normal = normalize(vecNormal);
     if(closestDepth+0.001f>sunSpacePosNormalized.z){
+        return 1.0;
+    }
+    return 0.;
+}
+float calculateShadow2(){
+    vec4 lightSpacePosNorm = lightSpacePos/lightSpacePos.w;
+    vec4 lightSpacePosNormalized = lightSpacePosNorm*0.5f + 0.5f;
+    float closestDepth = texture(depthMap, lightSpacePosNormalized.xy).r;
+    vec3 normal = normalize(vecNormal);
+    if(closestDepth+0.001f>lightSpacePosNormalized.z){
         return 1.0;
     }
     return 0.;
@@ -138,6 +149,7 @@ void main()
 
 	//sun
 	ilumination=ilumination+PBRLight(sunDir,sunColor*calculateShadow(),normal,viewDir);
+	ilumination=ilumination+PBRLight(lightDir,lightColor*calculateShadow2(),normal,viewDir);
 
     
 	outColor = vec4(vec3(1.0) - exp(-ilumination*exposition),1);
