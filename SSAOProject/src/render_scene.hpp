@@ -18,7 +18,8 @@
 #include "SOIL/stb_image_aug.h"
 
 const unsigned int SHADOW_WIDTH = 8192, SHADOW_HEIGHT = 8192;
-unsigned int skyboxVAO, skyboxVBO, cubemapTexture;
+unsigned int skyboxVAO, skyboxVBO, cubemapTexture, gPosition, gNormal, gAlbedo, noiseTexture, 
+ssaoFBO, ssaoBlurFBO, ssaoColorBuffer, ssaoColorBufferBlur, rboDepth;
 
 int WIDTH = 500, HEIGHT = 500;
 
@@ -69,23 +70,6 @@ namespace models {
 	Core::RenderContext spaceshipContext;
 	Core::RenderContext sphereContext;
 	Core::RenderContext testContext;
-
-	/*
-	Core::RenderContext bedContext;
-	Core::RenderContext chairContext;
-	Core::RenderContext deskContext;
-	Core::RenderContext doorContext;
-	Core::RenderContext drawerContext;
-	Core::RenderContext marbleBustContext;
-	Core::RenderContext materaceContext;
-	Core::RenderContext pencilsContext;
-	Core::RenderContext planeContext;
-	Core::RenderContext roomContext;
-	Core::RenderContext spaceshipContext;
-	Core::RenderContext sphereContext;
-	Core::RenderContext windowContext;
-	Core::RenderContext testContext;
-	*/
 }
 
 GLuint depthMapFBO;
@@ -98,10 +82,17 @@ GLuint programTest;
 GLuint programTex;
 GLuint skyboxProgram;
 
+GLuint ssaoGeometryPassProgram;
+GLuint ssaoProgram;
+GLuint ssaoBlurProgram;
+
 Core::Shader_Loader shaderLoader;
 
 Core::RenderContext shipContext;
 Core::RenderContext sphereContext;
+
+std::vector<glm::vec3> ssaoKernel;
+
 
 //DO NOT TOUCH
 glm::vec3 sunPos = glm::vec3(15.740971f, 7.149999f, -6.369280f);
@@ -144,6 +135,7 @@ float lastTime = -1.f;
 float deltaTime = 0.f;
 
 void renderSkybox();
+void renderSSAO();
 
 void updateDeltaTime(float time) {
 	if (lastTime < 0) {
@@ -154,6 +146,11 @@ void updateDeltaTime(float time) {
 	deltaTime = time - lastTime;
 	if (deltaTime > 0.1) deltaTime = 0.1;
 	lastTime = time;
+}
+
+float lerp(float a, float b, float f)
+{
+	return a + f * (b - a);
 }
 
 void initDepthMap() {
@@ -428,20 +425,6 @@ void renderScene(GLFWwindow* window)
 	drawObjectPBR(models::lampPart5Context, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 0.0f);
 	drawObjectPBR(models::lampBulbContext, glm::mat4(), glm::vec3(0.9f, 0.9f, 0.9f), 0.2f, 0.0f);
 
-	/*
-	drawObjectPBR(models::bedContext, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 0.0f);
-	drawObjectPBR(models::chairContext, glm::mat4(), glm::vec3(0.195239f, 0.37728f, 0.8f), 0.4f, 0.0f);
-	drawObjectPBR(models::deskContext, glm::mat4(), glm::vec3(0.428691f, 0.08022f, 0.036889f), 0.2f, 0.0f);
-	drawObjectPBR(models::doorContext, glm::mat4(), glm::vec3(0.402978f, 0.120509f, 0.057729f), 0.2f, 0.0f);
-	drawObjectPBR(models::drawerContext, glm::mat4(), glm::vec3(0.428691f, 0.08022f, 0.036889f), 0.2f, 0.0f);
-	drawObjectPBR(models::marbleBustContext, glm::mat4(), glm::vec3(1.f, 1.f, 1.f), 0.5f, 1.0f);
-	drawObjectPBR(models::materaceContext, glm::mat4(), glm::vec3(0.9f, 0.9f, 0.9f), 0.8f, 0.0f);
-	drawObjectPBR(models::pencilsContext, glm::mat4(), glm::vec3(0.10039f, 0.018356f, 0.001935f), 0.1f, 0.0f);
-	drawObjectPBR(models::planeContext, glm::mat4(), glm::vec3(0.402978f, 0.120509f, 0.057729f), 0.2f, 0.0f);
-	drawObjectPBR(models::roomContext, glm::mat4(), glm::vec3(0.9f, 0.9f, 0.9f), 0.8f, 0.0f);
-	drawObjectPBR(models::windowContext, glm::mat4(), glm::vec3(0.402978f, 0.120509f, 0.057729f), 0.2f, 0.0f);
-	*/
-
 	glm::vec3 spaceshipSide = glm::normalize(glm::cross(spaceshipDir, glm::vec3(0.f, 1.f, 0.f)));
 	glm::vec3 spaceshipUp = glm::normalize(glm::cross(spaceshipSide, spaceshipDir));
 	glm::mat4 specshipCameraRotrationMatrix = glm::mat4({
@@ -464,6 +447,8 @@ void renderScene(GLFWwindow* window)
 
 	spotlightPos = spaceshipPos + 0.2 * spaceshipDir;
 	spotlightConeDir = spaceshipDir;
+
+	renderSSAO();
 
 	renderSkybox();
 	
@@ -545,6 +530,102 @@ void generateSkybox() {
 	glUniform1i(glGetUniformLocation(skyboxProgram, "skybox"), 0);
 }
 
+float getRandomFloat() {
+	return static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+}
+
+void generateSSAO() {
+
+	glGenTextures(1, &gPosition);
+	glBindTexture(GL_TEXTURE_2D, gPosition);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, WIDTH, HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPosition, 0);
+
+	glGenTextures(1, &gNormal);
+	glBindTexture(GL_TEXTURE_2D, gNormal);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, WIDTH, HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormal, 0);
+
+	glGenTextures(1, &gAlbedo);
+	glBindTexture(GL_TEXTURE_2D, gAlbedo);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WIDTH, HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gAlbedo, 0);
+
+	unsigned int attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+	glDrawBuffers(3, attachments);
+
+	glGenRenderbuffers(1, &rboDepth);
+	glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, WIDTH, HEIGHT);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "Framebuffer not complete!" << std::endl;
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glGenFramebuffers(1, &ssaoFBO);  glGenFramebuffers(1, &ssaoBlurFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
+	glGenTextures(1, &ssaoColorBuffer);
+	glBindTexture(GL_TEXTURE_2D, ssaoColorBuffer);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, WIDTH, HEIGHT, 0, GL_RED, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssaoColorBuffer, 0);
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "SSAO Framebuffer not complete!" << std::endl;
+
+	glBindFramebuffer(GL_FRAMEBUFFER, ssaoBlurFBO);
+	glGenTextures(1, &ssaoColorBufferBlur);
+	glBindTexture(GL_TEXTURE_2D, ssaoColorBufferBlur);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, WIDTH, HEIGHT, 0, GL_RED, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssaoColorBufferBlur, 0);
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "SSAO Blur Framebuffer not complete!" << std::endl;
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	for (unsigned int i = 0; i < 64; ++i)
+	{
+		glm::vec3 sample(getRandomFloat() * 2.0 - 1.0, getRandomFloat() * 2.0 - 1.0, getRandomFloat());
+		sample = glm::normalize(sample);
+		sample *= getRandomFloat();
+		float scale = float(i) / 64.0f;
+
+		scale = lerp(0.1f, 1.0f, scale * scale);
+		sample *= scale;
+		ssaoKernel.push_back(sample);
+	}
+
+	std::vector<glm::vec3> ssaoNoise;
+	for (unsigned int i = 0; i < 16; i++)
+	{
+		glm::vec3 noise(
+			getRandomFloat() * 2.0 - 1.0,
+			getRandomFloat() * 2.0 - 1.0,
+			0.0f);
+		ssaoNoise.push_back(noise);
+	}
+
+	glGenTextures(1, &noiseTexture);
+	glBindTexture(GL_TEXTURE_2D, noiseTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 4, 4, 0, GL_RGB, GL_FLOAT, &ssaoNoise[0]);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	
+}
+
 void renderSkybox() {
 
 	glm::mat4 projectionMatrix = createPerspectiveMatrix();
@@ -561,6 +642,34 @@ void renderSkybox() {
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 	glBindVertexArray(0);
 	glDepthFunc(GL_LESS);
+
+}
+
+void renderSSAO() {
+	glm::mat4 projectionMatrix = createPerspectiveMatrix();
+	glBindFramebuffer(GL_FRAMEBUFFER, ssaoBlurFBO);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glUseProgram(ssaoProgram);
+	for (unsigned int i = 0; i < 64; ++i) {
+		std::string sampleName = "samples[" + std::to_string(i) + "]";
+		glUniform3f(glGetUniformLocation(ssaoProgram, sampleName.c_str()), ssaoKernel[i].x, ssaoKernel[i].y, ssaoKernel[i].z);
+	};
+
+	glUniformMatrix4fv(glGetUniformLocation(ssaoProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, gPosition);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, gNormal);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, noiseTexture);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, ssaoBlurFBO);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glUseProgram(ssaoBlurProgram);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, ssaoColorBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void loadModels() {
@@ -611,22 +720,6 @@ void loadModels() {
 	loadModelToContext("./models/lamp_part5.obj", models::lampPart5Context);
 	loadModelToContext("./models/lamp_bulb.obj", models::lampBulbContext);
 
-	/*
-	loadModelToContext("./models/bed.obj", models::bedContext);
-	loadModelToContext("./models/chair.obj", models::chairContext);
-	loadModelToContext("./models/desk.obj", models::deskContext);
-	loadModelToContext("./models/door.obj", models::doorContext);
-	loadModelToContext("./models/drawer.obj", models::drawerContext);
-	loadModelToContext("./models/marbleBust.obj", models::marbleBustContext);
-	loadModelToContext("./models/materace.obj", models::materaceContext);
-	loadModelToContext("./models/pencils.obj", models::pencilsContext);
-	loadModelToContext("./models/plane.obj", models::planeContext);
-	loadModelToContext("./models/room.obj", models::roomContext);
-	loadModelToContext("./models/spaceship.obj", models::spaceshipContext);
-	loadModelToContext("./models/sphere.obj", models::sphereContext);
-	loadModelToContext("./models/window.obj", models::windowContext);
-	loadModelToContext("./models/test.obj", models::testContext);
-	*/
 }
 
 void loadShaders() {
@@ -635,6 +728,10 @@ void loadShaders() {
 	programTest = shaderLoader.CreateProgram("shaders/test.vert", "shaders/test.frag");
 	programSun = shaderLoader.CreateProgram("shaders/shader_8_sun.vert", "shaders/shader_8_sun.frag");
 	skyboxProgram = shaderLoader.CreateProgram("shaders/shader_skybox.vert", "shaders/shader_skybox.frag");
+
+	ssaoGeometryPassProgram = shaderLoader.CreateProgram("shaders/shader_ssao.geometry.vert", "shaders/shader_ssao.geometry.frag");
+	ssaoProgram = shaderLoader.CreateProgram("shaders/shader_ssao.vert", "shaders/shader_ssao.frag");
+	ssaoBlurProgram = shaderLoader.CreateProgram("shaders/shader_ssao.vert", "shaders/shader_ssao.blur.frag");
 }
 
 void init(GLFWwindow* window)
@@ -647,6 +744,7 @@ void init(GLFWwindow* window)
 	
 	loadShaders();
 	loadModels();
+	generateSSAO();
 	generateSkybox();
 
 }

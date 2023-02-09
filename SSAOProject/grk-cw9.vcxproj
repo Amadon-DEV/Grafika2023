@@ -56,6 +56,11 @@
     <None Include="shaders\shader_shadow.vert" />
     <None Include="shaders\shader_skybox.frag" />
     <None Include="shaders\shader_skybox.vert" />
+    <None Include="shaders\shader_ssao.geometry.vert" />
+    <None Include="shaders\shader_ssao.blur.frag" />
+    <None Include="shaders\shader_ssao.frag" />
+    <None Include="shaders\shader_ssao.geometry.frag" />
+    <None Include="shaders\shader_ssao.vert" />
     <None Include="shaders\test.frag" />
     <None Include="shaders\test.vert" />
   </ItemGroup>
