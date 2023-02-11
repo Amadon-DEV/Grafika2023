@@ -7,7 +7,7 @@
 
 #include "Shader_Loader.h"
 #include "Render_Utils.h"
-//#include "Texture.h"
+#include "Texture.h"
 
 #include "Box.cpp"
 #include <assimp/Importer.hpp>
@@ -88,6 +88,19 @@ namespace models {
 	*/
 }
 
+namespace texture {
+	GLuint earth;
+	GLuint clouds;
+	GLuint moon;
+	GLuint ship;
+
+	GLuint grid;
+
+	GLuint earthNormal;
+	GLuint asteroidNormal;
+	GLuint shipNormal;
+}
+
 GLuint depthMapFBO;
 GLuint depthMap;
 
@@ -96,6 +109,8 @@ GLuint programDepth;
 GLuint programSun;
 GLuint programTest;
 GLuint programTex;
+GLuint programEarth;
+GLuint programProcTex;
 GLuint skyboxProgram;
 
 Core::Shader_Loader shaderLoader;
@@ -251,6 +266,58 @@ void drawObjectPBR(Core::RenderContext& context, glm::mat4 modelMatrix, glm::vec
 
 }
 
+void drawObjectPBR2(Core::RenderContext& context, glm::mat4 modelMatrix, glm::vec3 color, float roughness, float metallic, GLuint textureID) {
+
+	glUseProgram(programTex);
+	glm::mat4 viewProjectionMatrix = createPerspectiveMatrix() * createCameraMatrix();
+	glm::mat4 transformation = viewProjectionMatrix * modelMatrix;
+	glUniformMatrix4fv(glGetUniformLocation(program, "transformation"), 1, GL_FALSE, (float*)&transformation);
+	glUniformMatrix4fv(glGetUniformLocation(program, "modelMatrix"), 1, GL_FALSE, (float*)&modelMatrix);
+
+	glUniform1f(glGetUniformLocation(program, "exposition"), exposition);
+
+	glUniform1f(glGetUniformLocation(program, "roughness"), roughness);
+	glUniform1f(glGetUniformLocation(program, "metallic"), metallic);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+	//glm::mat4 lightVP = glm::ortho(-3.f, 2.2f, -2.f, 3.5f, 1.f, 30.0f) * glm::lookAt(sunPos, sunPos - sunDir, glm::vec3(0, 1, 0));
+
+	glUniformMatrix4fv(glGetUniformLocation(program, "lightVP"), 1, GL_FALSE, (float*)&lightVP);
+	glUniformMatrix4fv(glGetUniformLocation(program, "lightVP2"), 1, GL_FALSE, (float*)&lightVP2);
+
+	glUniform3f(glGetUniformLocation(program, "color"), color.x, color.y, color.z);
+
+	Core::SetActiveTexture(textureID, "colorTexture", programTex, 0);
+
+	glUniform3f(glGetUniformLocation(program, "cameraPos"), cameraPos.x, cameraPos.y, cameraPos.z);
+
+	glUniform3f(glGetUniformLocation(program, "sunDir"), sunDir.x, sunDir.y, sunDir.z);
+	glUniform3f(glGetUniformLocation(program, "sunColor"), sunColor.x, sunColor.y, sunColor.z);
+
+	glUniform3f(glGetUniformLocation(program, "lightPos"), pointlightPos.x, pointlightPos.y, pointlightPos.z);
+	glUniform3f(glGetUniformLocation(program, "lightColor"), pointlightColor.x, pointlightColor.y, pointlightColor.z);
+
+	glUniform3f(glGetUniformLocation(program, "spotlightConeDir"), spotlightConeDir.x, spotlightConeDir.y, spotlightConeDir.z);
+	glUniform3f(glGetUniformLocation(program, "spotlightPos"), spotlightPos.x, spotlightPos.y, spotlightPos.z);
+	glUniform3f(glGetUniformLocation(program, "spotlightColor"), spotlightColor.x, spotlightColor.y, spotlightColor.z);
+	glUniform1f(glGetUniformLocation(program, "spotlightPhi"), spotlightPhi);
+	Core::DrawContext(context);
+
+}
+
+void drawObjectTexture(Core::RenderContext& context, glm::mat4 modelMatrix, GLuint textureID) {
+	glUseProgram(programTex);
+	glm::mat4 viewProjectionMatrix = createPerspectiveMatrix() * createCameraMatrix();
+	glm::mat4 transformation = viewProjectionMatrix * modelMatrix;
+	glUniformMatrix4fv(glGetUniformLocation(program, "transformation"), 1, GL_FALSE, (float*)&transformation);
+	glUniformMatrix4fv(glGetUniformLocation(program, "modelMatrix"), 1, GL_FALSE, (float*)&modelMatrix);
+	glUniform3f(glGetUniformLocation(program, "lightPos"), 0, 0, 0);
+	Core::SetActiveTexture(textureID, "colorTexture", programTex, 0);
+	Core::DrawContext(context);
+
+}
+
 void drawObjectDepth(Core::RenderContext& context, glm::mat4 viewProjectionMatrix, glm::mat4 modelMatrix) {
 	glUniformMatrix4fv(glGetUniformLocation(programDepth, "viewProjectionMatrix"), 1, GL_FALSE, (float*)&viewProjectionMatrix);
 	glUniformMatrix4fv(glGetUniformLocation(programDepth, "modelMatrix"), 1, GL_FALSE, (float*)&modelMatrix);
@@ -351,6 +418,8 @@ void renderShadowapSun() {
 	drawObjectDepth(shipContext, viewProjection, glm::translate(spaceshipPos) * specshipCameraRotrationMatrix * glm::eulerAngleY(glm::pi<float>()) * glm::scale(glm::vec3(0.03f)));
 	viewProjection = lightVP2;
 	drawObjectDepth(shipContext, viewProjection, glm::translate(spaceshipPos) * specshipCameraRotrationMatrix * glm::eulerAngleY(glm::pi<float>()) * glm::scale(glm::vec3(0.03f)));
+	
+
 	drawObjectDepth(models::doorContext, viewProjection, glm::mat4());
 	drawObjectDepth(models::bedLegsContext, viewProjection, glm::mat4());
 	drawObjectDepth(models::bedMainContext, viewProjection, glm::mat4());
@@ -417,6 +486,10 @@ void renderScene(GLFWwindow* window)
 		glm::translate(pointlightPos) * glm::scale(glm::vec3(0.1)) * glm::eulerAngleY(time / 3) * glm::translate(glm::vec3(orbitSize, 0, 0)) * glm::eulerAngleY(time * changeSpin) * glm::translate(glm::vec3(1.f, 0, 0)) * glm::scale(glm::vec3(0.1f)),
 		glm::vec3(0.5, 0.5, 0.5), 0.7, 0.0);
 
+	//drawObjectPBR2(models::wallsContext, glm::mat4(), glm::vec3(0.0924f, 0.465f, 0.770f), 0.8f, 0.0f, texture::moon);
+	//drawObjectTexture(models::wallsContext, glm::mat4(), texture::moon);
+
+	
 	drawObjectPBR(models::wallsContext, glm::mat4(), glm::vec3(0.0924f, 0.465f, 0.770f), 0.8f, 0.0f);
 	drawObjectPBR(sphereContext, glm::translate(sunPos) * glm::mat4(), glm::vec3(0.0924f, 0.465f, 0.770f), 0.8f, 0.0f);
 	drawObjectPBR(models::planeContext, glm::mat4(), glm::vec3(0.630f, 0.413f, 0.2378f), 0.2f, 0.0f);
@@ -460,6 +533,54 @@ void renderScene(GLFWwindow* window)
 	drawObjectPBR(models::lampPart4Context, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 0.0f);
 	drawObjectPBR(models::lampPart5Context, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 0.0f);
 	drawObjectPBR(models::lampBulbContext, glm::mat4(), glm::vec3(0.9f, 0.9f, 0.9f), 0.2f, 0.0f);
+	
+
+	/*
+	drawObjectPBR2(models::wallsContext, glm::mat4(), glm::vec3(0.0924f, 0.465f, 0.770f), 0.8f, 0.0f, texture::moon);
+	drawObjectPBR2(sphereContext, glm::translate(sunPos) * glm::mat4(), glm::vec3(0.0924f, 0.465f, 0.770f), 0.8f, 0.0f, texture::moon);
+	drawObjectPBR2(models::planeContext, glm::mat4(), glm::vec3(0.630f, 0.413f, 0.2378f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::floorContext, glm::mat4(), glm::vec3(0.630f, 0.413f, 0.2378f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::roofContext, glm::mat4(), glm::vec3(0.9f, 0.9f, 0.9f), 0.8f, 0.0f, texture::moon);
+	drawObjectPBR2(models::window1Context, glm::mat4(), glm::vec3(0.250f, 0.250f, 0.250f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::window2Context, glm::mat4(), glm::vec3(0.250f, 0.250f, 0.250f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::doorContext, glm::mat4(), glm::vec3(0.250f, 0.250f, 0.250f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::bedLegsContext, glm::mat4(), glm::vec3(0.228691f, 0.08022f, 0.036889f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::bedMainContext, glm::mat4(), glm::vec3(0.228691f, 0.08022f, 0.036889f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::bedBackContext, glm::mat4(), glm::vec3(0.228691f, 0.08022f, 0.036889f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::bedMateraceContext, glm::mat4(), glm::vec3(0.9f, 0.9f, 0.9f), 0.8f, 0.0f, texture::moon);
+	drawObjectPBR2(models::bedSphereContext, glm::mat4(), glm::vec3(0.9f, 0.9f, 0.9f), 0.8f, 0.0f, texture::moon);
+	drawObjectPBR2(models::nightstand1LegsContext, glm::mat4(), glm::vec3(0.228691f, 0.08022f, 0.036889f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::nightstand1MainContext, glm::mat4(), glm::vec3(0.228691f, 0.08022f, 0.036889f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::nightstand1SphereContext, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::bedlamp1MainContext, glm::mat4(), glm::vec3(0.0138f, 0.690f, 0.149f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::bedlamp1TopContext, glm::mat4(), glm::vec3(1.00f, 0.957f, 0.140f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::nightstand2LegsContext, glm::mat4(), glm::vec3(0.228691f, 0.08022f, 0.036889f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::nightstand2MainContext, glm::mat4(), glm::vec3(0.228691f, 0.08022f, 0.036889f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::nightstand2SphereContext, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::bedlamp2MainContext, glm::mat4(), glm::vec3(0.0138f, 0.690f, 0.149f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::bedlamp2TopContext, glm::mat4(), glm::vec3(1.00f, 0.957f, 0.140f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::wardrobeMainContext, glm::mat4(), glm::vec3(0.228691f, 0.08022f, 0.036889f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::wardrobeSphere1Context, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::wardrobeSphere2Context, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::bookshelfContext, glm::mat4(), glm::vec3(0.228691f, 0.08022f, 0.036889f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::deskLegsContext, glm::mat4(), glm::vec3(0.228691f, 0.08022f, 0.036889f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::deskMainContext, glm::mat4(), glm::vec3(0.228691f, 0.08022f, 0.036889f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::deskTopContext, glm::mat4(), glm::vec3(0.228691f, 0.08022f, 0.036889f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::deskDrawerContext, glm::mat4(), glm::vec3(0.228691f, 0.08022f, 0.036889f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::deskSphereContext, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::tvBottomContext, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 1.0f, texture::moon);
+	drawObjectPBR2(models::tvMiddleContext, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 1.0f, texture::moon);
+	drawObjectPBR2(models::tvTopContext, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 1.0f, texture::moon);
+	drawObjectPBR2(models::tvMainContext, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 1.0f, texture::moon);
+	drawObjectPBR2(models::chairContext, glm::mat4(), glm::vec3(0.830f, 0.0830f, 0.158f), 0.4f, 0.0f, texture::moon);
+	drawObjectPBR2(models::lampPart1Context, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::lampPart2Context, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::lampPart3Context, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::lampPart4Context, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::lampPart5Context, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 0.0f, texture::moon);
+	drawObjectPBR2(models::lampBulbContext, glm::mat4(), glm::vec3(0.9f, 0.9f, 0.9f), 0.2f, 0.0f, texture::moon);
+	*/
+
 
 	/*
 	drawObjectPBR(models::bedContext, glm::mat4(), glm::vec3(0.03f, 0.03f, 0.03f), 0.2f, 0.0f);
@@ -668,6 +789,13 @@ void loadShaders() {
 	programTest = shaderLoader.CreateProgram("shaders/test.vert", "shaders/test.frag");
 	programSun = shaderLoader.CreateProgram("shaders/shader_8_sun.vert", "shaders/shader_8_sun.frag");
 	skyboxProgram = shaderLoader.CreateProgram("shaders/shader_skybox.vert", "shaders/shader_skybox.frag");
+	programTex = shaderLoader.CreateProgram("shaders/shader_5_1_tex.vert", "shaders/shader_5_1_tex.frag");
+	programEarth = shaderLoader.CreateProgram("shaders/shader_5_1_tex.vert", "shaders/shader_5_1_tex.frag");
+	programProcTex = shaderLoader.CreateProgram("shaders/shader_5_1_tex.vert", "shaders/shader_5_1_tex.frag");
+}
+
+void loadTextures() {
+	texture::moon = Core::LoadTexture("./textures/moon.jpg");
 }
 
 void init(GLFWwindow* window)
@@ -680,6 +808,7 @@ void init(GLFWwindow* window)
 	
 	loadShaders();
 	loadModels();
+	loadTextures();
 	generateSkybox();
 
 }
