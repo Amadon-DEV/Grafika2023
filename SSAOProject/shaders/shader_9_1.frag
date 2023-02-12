@@ -87,7 +87,7 @@ float calculateShadow(){
                     }
             }
         }
-    float FinalShadowFactor = ShadowSum / 9.0;
+    float FinalShadowFactor = ShadowSum / float(pow(depthMapFilterSize, 2));
 
     return FinalShadowFactor;
 }
