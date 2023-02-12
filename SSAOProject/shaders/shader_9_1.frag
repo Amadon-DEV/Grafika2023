@@ -58,34 +58,41 @@ float DistributionGGX(vec3 normal, vec3 H, float roughness){
 	
     return num / denom;
 }
-
-float calculateShadow( vec3 lightDir, vec4 lightPos ){
-    vec3 lightPosNorm = sunSpacePos.xyz/sunSpacePos.w;
-    vec3 lightPosNormalized = lightPosNorm*0.5f + 0.5f;
-    vec3 normal = normalize(vecNormal);
-    
-    float shadowDiffuse = dot(normal, -lightDir);
-    float bias = mix(0.001f, 0.0, shadowDiffuse);
-
-    float texelWidth = 1.0 / shadowWidth;
-    float texelHeight = 1.0 / shadowHeight;
-
-    vec2 texelSize = vec2(texelWidth, texelHeight);
-
-    int halfFilterSize = shadowMapFilterSize / 2;
-
-    float shadowSum = 0.0;
-
-    for( int y = -halfFilterSize; y <= -halfFilterSize + shadowMapFilterSize; y++ ) {
-        for( int x = -halfFilterSize; x <= -halfFilterSize + shadowMapFilterSize; x++ ) {
-            vec2 offset = vec2( x, y ) * texelSize;
-            float closestDepth = texture( depthMap, lightPosNormalized.xy + offset ).r;
-               if( ( closestDepth + bias ) > lightPosNormalized.z ){
-                    shadowSum += 1.0; 
-               }
-        }
+float calculateShadow(){
+    if (shadowWidth == 0 || shadowHeight == 0){
+        return 1.0;
     }
-    return shadowSum / float(pow(shadowMapFilterSize, 2));
+    
+    vec3 ProjCoords = sunSpacePos.xyz/ sunSpacePos.w;
+    vec3 ShadowCoords = ProjCoords * 0.5 + vec3(0.5);
+
+    float DiffuseFactor = dot(vecNormal, -sunDir);
+    float bias = mix(0.001, 0.0, DiffuseFactor);
+
+    float TextelWidth = 1.0 / shadowWidth;
+    float TextelHeight = 1.0 / shadowHeight;
+
+    vec2 TextelSize = vec2(TextelWidth, TextelHeight);
+
+    float ShadowSum = 0.0;
+
+    int depthMapFilterSize = 11;
+
+    int HalfFilterSize = depthMapFilterSize/2;
+
+    for (int y = -HalfFilterSize ; y <= -HalfFilterSize + depthMapFilterSize ; y++){
+        for (int x = -HalfFilterSize ; x <= -HalfFilterSize + depthMapFilterSize ; x++){
+                vec2 Offset = vec2(x,y) * TextelSize;
+                float Depth = texture(depthMap, ShadowCoords.xy + Offset).x;
+
+                if (Depth + bias > ShadowCoords.z){
+                    ShadowSum += 1.0;
+                    }
+            }
+        }
+    float FinalShadowFactor = ShadowSum / float(pow(depthMapFilterSize, 2));
+
+    return FinalShadowFactor;
 }
 
  
@@ -178,7 +185,7 @@ void main()
 	ilumination=ilumination+PBRLight(spotlightDir,attenuatedlightColor,normal,viewDir);
 
 	//sun
-	ilumination=ilumination+PBRLight(sunDir,sunColor*calculateShadow(sunDir, sunSpacePos),normal,viewDir);
+	ilumination=ilumination+PBRLight(sunDir,sunColor*calculateShadow(),normal,viewDir);
 	ilumination=ilumination+PBRLight(lightDir,lightColor*calculateShadow2(),normal,viewDir);
 
     
