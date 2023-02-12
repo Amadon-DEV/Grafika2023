@@ -7,7 +7,6 @@
 
 #include "Shader_Loader.h"
 #include "Render_Utils.h"
-//#include "Texture.h"
 
 #include "Box.cpp"
 #include <assimp/Importer.hpp>
@@ -100,8 +99,6 @@ glm::vec3 sunPos = glm::vec3(15.740971f, 7.149999f, -6.369280f);
 glm::vec3 sunDir = glm::vec3(0.93633f, 0.351106, 0.003226f);
 glm::vec3 sunColor = glm::vec3(0.9f, 0.9f, 0.7f) * 5;
 
-//glm::vec3 sunPos = glm::vec3(-4.740971f, 2.149999f, 0.369280f);
-//glm::vec3 sunDir = glm::vec3(-0.93633f, 0.351106, 0.003226f);
 
 glm::vec3 cameraPos = glm::vec3(0.479490f, 1.250000f, -2.124680f);
 glm::vec3 cameraDir = glm::vec3(-0.354510f, 0.000000f, 0.935054f);
@@ -155,8 +152,6 @@ float lerp(float a, float b, float f)
 {
 	return a + f * (b - a);
 }
-
-void renderSkybox();
 
 void initDepthMap() {
 	glGenFramebuffers(1, &depthMapFBO);
@@ -230,6 +225,7 @@ void drawObjectPBR(Core::RenderContext& context, glm::mat4 modelMatrix, glm::vec
 
 	glUniform1f(glGetUniformLocation(program, "shadowWidth"), SHADOW_WIDTH);
 	glUniform1f(glGetUniformLocation(program, "shadowHeight"), SHADOW_HEIGHT);
+	glUniform1i(glGetUniformLocation(program, "shadowMapFilterSize"), 11.0);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, depthMap);
@@ -265,16 +261,11 @@ void drawObjectDepth(Core::RenderContext& context, glm::mat4 viewProjectionMatri
 
 void renderShadowapSun() {
 	float time = glfwGetTime();
-	//uzupelnij o renderowanie glebokosci do tekstury
 	glUseProgram(programDepth);
 
-	//ustawianie przestrzeni rysowania 
 	glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-	//bindowanie FBO
 	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-	//czyszczenie mapy głębokości 
 	glClear(GL_DEPTH_BUFFER_BIT);
-	//ustawianie programu
 	glUseProgram(programDepth);
 	glm::mat4 viewProjection = lightVP;
 	
@@ -326,20 +317,6 @@ void renderShadowapSun() {
 	drawObjectDepth(models::lampPart5Context, viewProjection, glm::mat4());
 	drawObjectDepth(models::lampBulbContext, viewProjection, glm::mat4());
 
-	/*
-	drawObjectDepth(models::bedContext, viewProjection, glm::mat4());
-	drawObjectDepth(models::chairContext, viewProjection, glm::mat4());
-	drawObjectDepth(models::deskContext, viewProjection, glm::mat4());
-	drawObjectDepth(models::doorContext, viewProjection, glm::mat4());
-	drawObjectDepth(models::drawerContext, viewProjection, glm::mat4());
-	drawObjectDepth(models::marbleBustContext, viewProjection, glm::mat4());
-	drawObjectDepth(models::materaceContext, viewProjection, glm::mat4());
-	drawObjectDepth(models::pencilsContext, viewProjection, glm::mat4());
-	drawObjectDepth(models::planeContext, viewProjection, glm::mat4());
-	drawObjectDepth(models::roomContext, viewProjection, glm::mat4());
-	drawObjectDepth(models::windowContext, viewProjection, glm::mat4());
-	*/
-
 	glm::vec3 spaceshipSide = glm::normalize(glm::cross(spaceshipDir, glm::vec3(0.f, 1.f, 0.f)));
 	glm::vec3 spaceshipUp = glm::normalize(glm::cross(spaceshipSide, spaceshipDir));
 	glm::mat4 specshipCameraRotrationMatrix = glm::mat4({
@@ -348,12 +325,6 @@ void renderShadowapSun() {
 		-spaceshipDir.x,-spaceshipDir.y,-spaceshipDir.z,0,
 		0.,0.,0.,1.,
 		});
-
-
-	//drawObjectColor(shipContext,
-	//	glm::translate(cameraPos + 1.5 * cameraDir + cameraUp * -0.5f) * inveseCameraRotrationMatrix * glm::eulerAngleY(glm::pi<float>()),
-	//	glm::vec3(0.3, 0.3, 0.5)
-	//	);
 	drawObjectDepth(shipContext, viewProjection, glm::translate(spaceshipPos) * specshipCameraRotrationMatrix * glm::eulerAngleY(glm::pi<float>()) * glm::scale(glm::vec3(0.03f)));
 	viewProjection = lightVP2;
 	drawObjectDepth(shipContext, viewProjection, glm::translate(spaceshipPos) * specshipCameraRotrationMatrix * glm::eulerAngleY(glm::pi<float>()) * glm::scale(glm::vec3(0.03f)));
@@ -560,12 +531,6 @@ void renderScene(GLFWwindow* window)
 		-spaceshipDir.x,-spaceshipDir.y,-spaceshipDir.z,0,
 		0.,0.,0.,1.,
 		});
-
-
-	//drawObjectColor(shipContext,
-	//	glm::translate(cameraPos + 1.5 * cameraDir + cameraUp * -0.5f) * inveseCameraRotrationMatrix * glm::eulerAngleY(glm::pi<float>()),
-	//	glm::vec3(0.3, 0.3, 0.5)
-	//	);
 	drawObjectPBR(shipContext,
 		glm::translate(spaceshipPos) * specshipCameraRotrationMatrix * glm::eulerAngleY(glm::pi<float>()) * glm::scale(glm::vec3(0.03f)),
 		glm::vec3(0.3, 0.3, 0.5),
@@ -576,12 +541,6 @@ void renderScene(GLFWwindow* window)
 	spotlightConeDir = spaceshipDir;
 
 	renderSkybox();
-	
-	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	//glUseProgram(programTest);
-	//glActiveTexture(GL_TEXTURE0);
-	//glBindTexture(GL_TEXTURE_2D, depthMap);
-	//Core::DrawContext(models::testContext);
 	
 	glUseProgram(0);
 	glfwSwapBuffers(window);
@@ -932,8 +891,6 @@ void renderLoop(GLFWwindow* window) {
 		processInput(window);
 
 		renderScene(window);
-		//renderSceneSSAO(window);
-		//renderSkybox();
 		glfwPollEvents();
 	}
 }

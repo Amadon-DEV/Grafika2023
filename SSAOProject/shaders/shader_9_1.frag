@@ -25,6 +25,7 @@ uniform float metallic;
 uniform float roughness;
 uniform float shadowWidth;
 uniform float shadowHeight;
+uniform int shadowMapFilterSize;
 
 uniform float exposition;
 
@@ -57,6 +58,7 @@ float DistributionGGX(vec3 normal, vec3 H, float roughness){
 	
     return num / denom;
 }
+
 float calculateShadow( vec3 lightDir, vec4 lightPos ){
     vec3 lightPosNorm = sunSpacePos.xyz/sunSpacePos.w;
     vec3 lightPosNormalized = lightPosNorm*0.5f + 0.5f;
@@ -70,10 +72,12 @@ float calculateShadow( vec3 lightDir, vec4 lightPos ){
 
     vec2 texelSize = vec2(texelWidth, texelHeight);
 
+    int halfFilterSize = shadowMapFilterSize / 2;
+
     float shadowSum = 0.0;
 
-    for( int y = -1; y <= 1; y++ ) {
-        for( int x = -1; x <= 1; x++ ) {
+    for( int y = -halfFilterSize; y <= -halfFilterSize + shadowMapFilterSize; y++ ) {
+        for( int x = -halfFilterSize; x <= -halfFilterSize + shadowMapFilterSize; x++ ) {
             vec2 offset = vec2( x, y ) * texelSize;
             float closestDepth = texture( depthMap, lightPosNormalized.xy + offset ).r;
                if( ( closestDepth + bias ) > lightPosNormalized.z ){
@@ -81,7 +85,7 @@ float calculateShadow( vec3 lightDir, vec4 lightPos ){
                }
         }
     }
-    return shadowSum / 9.0;
+    return shadowSum / float(pow(shadowMapFilterSize, 2));
 }
 
  
@@ -158,7 +162,8 @@ void main()
     vec4 ssPos = lightSpacePos / lightSpacePos.w;
     float ssaoValue = texture(ssaoResult, ssPos.xy).r;
 
-	vec3 ambient = AMBIENT*color*ssaoValue;
+	//vec3 ambient = AMBIENT*color*ssaoValue;
+    vec3 ambient = AMBIENT*color;
 	vec3 attenuatedlightColor = lightColor/pow(length(lightPos-worldPos),2);
 	vec3 ilumination;
 	ilumination = ambient+PBRLight(lightDir,attenuatedlightColor,normal,viewDir);
