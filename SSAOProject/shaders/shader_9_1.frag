@@ -25,6 +25,9 @@ uniform float roughness;
 
 uniform float exposition;
 
+uniform float shadowHeight;
+uniform float shadowWidth;
+
 in vec3 vecNormal;
 in vec3 worldPos;
 
@@ -53,14 +56,40 @@ float DistributionGGX(vec3 normal, vec3 H, float roughness){
     return num / denom;
 }
 float calculateShadow(){
-    vec4 sunSpacePosNorm = sunSpacePos/sunSpacePos.w;
-    vec4 sunSpacePosNormalized = sunSpacePosNorm*0.5f + 0.5f;
-    float closestDepth = texture(depthMap, sunSpacePosNormalized.xy).r;
-    vec3 normal = normalize(vecNormal);
-    if(closestDepth+0.001f>sunSpacePosNormalized.z){
+    if (shadowWidth == 0 || shadowHeight == 0){
         return 1.0;
     }
-    return 0.;
+    
+    vec3 ProjCoords = sunSpacePos.xyz/ sunSpacePos.w;
+    vec3 ShadowCoords = ProjCoords * 0.5 + vec3(0.5);
+
+    float DiffuseFactor = dot(vecNormal, -sunDir);
+    float bias = mix(0.001, 0.0, DiffuseFactor);
+
+    float TextelWidth = 1.0 / shadowWidth;
+    float TextelHeight = 1.0 / shadowHeight;
+
+    vec2 TextelSize = vec2(TextelWidth, TextelHeight);
+
+    float ShadowSum = 0.0;
+
+    int depthMapFilterSize = 11;
+
+    int HalfFilterSize = depthMapFilterSize/2;
+
+    for (int y = -HalfFilterSize ; y <= -HalfFilterSize + depthMapFilterSize ; y++){
+        for (int x = -HalfFilterSize ; x <= -HalfFilterSize + depthMapFilterSize ; x++){
+                vec2 Offset = vec2(x,y) * TextelSize;
+                float Depth = texture(depthMap, ShadowCoords.xy + Offset).x;
+
+                if (Depth + bias > ShadowCoords.z){
+                    ShadowSum += 1.0;
+                    }
+            }
+        }
+    float FinalShadowFactor = ShadowSum / 9.0;
+
+    return FinalShadowFactor;
 }
 float calculateShadow2(){
     vec4 lightSpacePosNorm = lightSpacePos/lightSpacePos.w;

@@ -247,6 +247,8 @@ void drawObjectPBR(Core::RenderContext& context, glm::mat4 modelMatrix, glm::vec
 	glUniform3f(glGetUniformLocation(program, "spotlightPos"), spotlightPos.x, spotlightPos.y, spotlightPos.z);
 	glUniform3f(glGetUniformLocation(program, "spotlightColor"), spotlightColor.x, spotlightColor.y, spotlightColor.z);
 	glUniform1f(glGetUniformLocation(program, "spotlightPhi"), spotlightPhi);
+	glUniform1f(glGetUniformLocation(program, "shadowHeight"), SHADOW_HEIGHT);
+	glUniform1f(glGetUniformLocation(program, "shadowWidth"), SHADOW_WIDTH);
 	Core::DrawContext(context);
 
 }
