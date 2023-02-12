@@ -22,6 +22,8 @@ uniform vec3 spotlightPhi;
 
 uniform float metallic;
 uniform float roughness;
+uniform float shadowWidth;
+uniform float shadowHeight;
 
 uniform float exposition;
 
@@ -52,16 +54,34 @@ float DistributionGGX(vec3 normal, vec3 H, float roughness){
 	
     return num / denom;
 }
-float calculateShadow(){
-    vec4 sunSpacePosNorm = sunSpacePos/sunSpacePos.w;
-    vec4 sunSpacePosNormalized = sunSpacePosNorm*0.5f + 0.5f;
-    float closestDepth = texture(depthMap, sunSpacePosNormalized.xy).r;
+float calculateShadow( vec3 lightDir, vec4 lightPos ){
+    vec3 lightPosNorm = sunSpacePos.xyz/sunSpacePos.w;
+    vec3 lightPosNormalized = lightPosNorm*0.5f + 0.5f;
     vec3 normal = normalize(vecNormal);
-    if(closestDepth+0.001f>sunSpacePosNormalized.z){
-        return 1.0;
+    
+    float shadowDiffuse = dot(normal, -lightDir);
+    float bias = mix(0.001f, 0.0, shadowDiffuse);
+
+    float texelWidth = 1.0 / shadowWidth;
+    float texelHeight = 1.0 / shadowHeight;
+
+    vec2 texelSize = vec2(texelWidth, texelHeight);
+
+    float shadowSum = 0.0;
+
+    for( int y = -1; y <= 1; y++ ) {
+        for( int x = -1; x <= 1; x++ ) {
+            vec2 offset = vec2( x, y ) * texelSize;
+            float closestDepth = texture( depthMap, lightPosNormalized.xy + offset ).r;
+               if( ( closestDepth + bias ) > lightPosNormalized.z ){
+                    shadowSum += 1.0; 
+               }
+        }
     }
-    return 0.;
+    return shadowSum / 9.0;
 }
+
+ 
 float calculateShadow2(){
     vec4 lightSpacePosNorm = lightSpacePos/lightSpacePos.w;
     vec4 lightSpacePosNormalized = lightSpacePosNorm*0.5f + 0.5f;
@@ -148,7 +168,7 @@ void main()
 	ilumination=ilumination+PBRLight(spotlightDir,attenuatedlightColor,normal,viewDir);
 
 	//sun
-	ilumination=ilumination+PBRLight(sunDir,sunColor*calculateShadow(),normal,viewDir);
+	ilumination=ilumination+PBRLight(sunDir,sunColor*calculateShadow(sunDir, sunSpacePos),normal,viewDir);
 	ilumination=ilumination+PBRLight(lightDir,lightColor*calculateShadow2(),normal,viewDir);
 
     

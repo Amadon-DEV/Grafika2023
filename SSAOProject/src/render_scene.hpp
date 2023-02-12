@@ -226,6 +226,9 @@ void drawObjectPBR(Core::RenderContext& context, glm::mat4 modelMatrix, glm::vec
 	glUniform1f(glGetUniformLocation(program, "roughness"), roughness);
 	glUniform1f(glGetUniformLocation(program, "metallic"), metallic);
 
+	glUniform1f(glGetUniformLocation(program, "shadowWidth"), SHADOW_WIDTH);
+	glUniform1f(glGetUniformLocation(program, "shadowHeight"), SHADOW_HEIGHT);
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, depthMap);
 	//glm::mat4 lightVP = glm::ortho(-3.f, 2.2f, -2.f, 3.5f, 1.f, 30.0f) * glm::lookAt(sunPos, sunPos - sunDir, glm::vec3(0, 1, 0));
@@ -597,7 +600,7 @@ void renderSkybox() {
 }
 
 void loadModels() {
-	loadModelToContext("./models/sphere.obj", sphereContext);
+	loadModelToContext("./models/lamp_bulb.obj", sphereContext);
 	loadModelToContext("./models/spaceship.obj", shipContext);
 
 
