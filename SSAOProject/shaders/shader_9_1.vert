@@ -11,6 +11,8 @@ uniform mat4 modelMatrix;
 uniform mat4 lightVP;
 uniform mat4 lightVP2;
 
+out vec2 textCoord;
+
 out vec3 vecNormal;
 out vec3 worldPos;
 
@@ -25,9 +27,11 @@ out vec3 spotlightDirTS;
 out vec3 sunDirTS;
 out vec4 sunSpacePos;
 out vec4 lightSpacePos;
+out vec4 screenSpacePos;
 
 void main()
 {
+	textCoord = vertexTexCoord;
 	worldPos = (modelMatrix* vec4(vertexPosition,1)).xyz;
 	vecNormal = (modelMatrix* vec4(vertexNormal,0)).xyz;
 	gl_Position = transformation * vec4(vertexPosition, 1.0);
@@ -46,5 +50,6 @@ void main()
 
 	sunSpacePos=lightVP*modelMatrix*vec4(vertexPosition,1.0);
 	lightSpacePos=lightVP2*modelMatrix*vec4(vertexPosition,1.0);
+	screenSpacePos = transformation * vec4(vertexPosition, 1.0);
 
 }
