@@ -4,6 +4,7 @@ float AMBIENT = 0.03;
 float PI = 3.14;
 
 uniform sampler2D depthMap;
+uniform sampler2D ssaoResult;
 
 uniform vec3 cameraPos;
 
@@ -31,12 +32,14 @@ in vec3 worldPos;
 out vec4 outColor;
 
 
+in vec2 textCoord;
 in vec3 viewDirTS;
 in vec3 lightDirTS;
 in vec3 spotlightDirTS;
 in vec3 sunDirTS;
 in vec4 sunSpacePos;
 in vec4 lightSpacePos;
+in vec4 screenSpacePos;
 
 in vec3 test;
 
@@ -132,8 +135,10 @@ void main()
 	//vec3 lightDir = normalize(lightDirTS);
 	vec3 lightDir = normalize(lightPos-worldPos);
 
+    vec4 ssPos = lightSpacePos / lightSpacePos.w;
+    float ssaoValue = texture(ssaoResult, ssPos.xy).r;
 
-	vec3 ambient = AMBIENT*color;
+	vec3 ambient = AMBIENT*color*ssaoValue;
 	vec3 attenuatedlightColor = lightColor/pow(length(lightPos-worldPos),2);
 	vec3 ilumination;
 	ilumination = ambient+PBRLight(lightDir,attenuatedlightColor,normal,viewDir);
@@ -142,7 +147,7 @@ void main()
 	//vec3 spotlightDir= normalize(spotlightDirTS);
 	vec3 spotlightDir= normalize(spotlightPos-worldPos);
 	
-
+    // world pos kierunek padania œwiat³a
     float angle_atenuation = clamp((dot(-normalize(spotlightPos-worldPos),spotlightConeDir)-0.5)*3,0,1);
 	attenuatedlightColor = angle_atenuation*spotlightColor/pow(length(spotlightPos-worldPos),2);
 	ilumination=ilumination+PBRLight(spotlightDir,attenuatedlightColor,normal,viewDir);

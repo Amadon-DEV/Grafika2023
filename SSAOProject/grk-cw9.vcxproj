@@ -61,6 +61,7 @@
     <None Include="shaders\shader_ssao.frag" />
     <None Include="shaders\shader_ssao.geometry.frag" />
     <None Include="shaders\shader_ssao.vert" />
+    <None Include="shaders\shader_ssao_lightning.frag" />
     <None Include="shaders\test.frag" />
     <None Include="shaders\test.vert" />
   </ItemGroup>

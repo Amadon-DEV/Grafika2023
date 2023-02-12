@@ -133,6 +133,7 @@
     <None Include="shaders\shader_ssao.geometry.frag" />
     <None Include="shaders\shader_ssao.geometry.vert" />
     <None Include="shaders\shader_ssao.blur.frag" />
+    <None Include="shaders\shader_ssao_lightning.frag" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="img\2.png">
